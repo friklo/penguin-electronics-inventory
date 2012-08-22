@@ -38,6 +38,21 @@ function ReadConfigInt($name, $default_value)
 }
 
 /** 
+	Returns a string parameter from the configuration settings or a default value if unspecified
+	
+	@param name				Name of the parameter
+	@param default_value	Default value if $g_config[name] is not set
+ */
+function ReadConfigString($name, $default_value)
+{
+	global $g_config;
+	if(isset($g_config[$name]))
+		return $g_config[$name];
+	else
+		return $default_value;
+}
+
+/** 
 	@brief Returns a localized string
  */
 function GetLocalizedString($id)
@@ -46,37 +61,45 @@ function GetLocalizedString($id)
 	return $g_localstrings[$id];
 }
 
+/**
+	@brief Displays a database error
+ */
+function DatabaseError()
+{
+	global $g_dbconn;
+	if(ReadConfigInt('verbose_db_errors', 0))
+	{
+		if($g_dbconn->connect_error)
+			die(GetLocalizedString('database-error') .  $g_dbconn->connect_error);
+		else
+			die(GetLocalizedString('database-error') .  $g_dbconn->error);
+	}
+	else
+		die(GetLocalizedString('generic-error'));
+}
+
 /** 
-	Set up the database connection and initialize the current session
+	@brief Set up the database connection and initialize the current session
  */
 function SessionInit()
 {
-	/*
 	//connect to database
-	global $g_config;
 	global $g_dbconn;
-	global $g_tplvars;
-	$g_dbconn = mysql_connect($g_config['dbhost'], $g_config['dbuser'], $g_config['dbpass']);
-	if(!$g_dbconn)
-		dberror();
-		
-	//select db
-	mysql_select_db($g_config['dbname']);
-	
-	//create session
+	$g_dbconn = new mysqli(	ReadConfigString('db_server','localhost'),
+							ReadConfigString('db_user','penguin'),
+							ReadConfigString('db_pass',''),
+							ReadConfigString('db_name','penguin'),
+							ReadConfigInt('db_port',3306));
+	if($g_dbconn->connect_error)
+		DatabaseError();
+
+	//create session and set up default variables
 	session_start();
 	if(!isset($_SESSION['uid']))
 		$_SESSION['uid'] = -1;
-	else if($_SESSION['uid'] > 0)
-		$g_tplvars['logout'] = 'Log out';
-		
-	//Set some default template variables
-	$g_tplvars['menu'] = menu();
-	$g_tplvars['titlebase'] = $g_config['sitename'];
-	$g_tplvars['company'] = $g_config['company'];
-	*/
 }
 
 // All application code has to be in this function
 main();
+$g_dbconn->close();
 ?>

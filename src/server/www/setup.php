@@ -50,5 +50,18 @@ function DoSetup()
 	}
 	
 	//If we get to this point the lock either doesn't exist or has been ignored. Start the setup process.
+	SessionInit();
+	
+	//Run the setup queries
+	global $g_dbconn;
+	if(!$g_dbconn->multi_query(file_get_contents('../setup/setup.sql')))
+		DatabaseError();
+	while($g_dbconn->more_results())
+	{
+		if(!$g_dbconn->next_result())
+			DatabaseError();
+	}
+	
+	echo GetLocalizedString('setup-done');
 }
 ?>

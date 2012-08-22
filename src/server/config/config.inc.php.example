@@ -1,0 +1,30 @@
+<?php
+/**
+	@file config.inc.php.example
+	@brief Template for configuration files.
+	
+	Copy this file to config.inc.php and change options as necessary.
+ */
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// MUST-CHANGE OPTIONS
+	// It is critical that you look at every single one of these options and choose a sane value.
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	$g_config['db_server'] =			'localhost';				//Database server address
+	$g_config['db_port'] = 				3306;						//Database port number
+	$g_config['db_user'] = 				'penguin';					//Database username
+	$g_config['db_pass'] =				'password_here';			//Database password
+	$g_config['db_name'] = 				'penguin';					//Database name (must already exist)
+	$g_config['lang'] = 				'en-us';					//Current language ID (all lowercase)
+	$g_config['ignore_setup_lock'] = 	0;							//Set to 1 in development and 0 for production.
+																	//Note that setting this to 1 will allow an unauthenticated
+																	//third party to completely reinitialize your database at
+																	//any time. You almost certainly do not want this!
+	$g_config['verbose_db_errors'] =	0;							//Set to 1 for fully detailed debug output, 0 for normal
+																	//usage. Do not set to 1 in production!!!
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// TWEAKS
+	// Most things below here should not need to be changed in a typical install.
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+?>
