@@ -33,38 +33,19 @@ public:
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//UI stuff
-	/*
-	Gtk::VBox m_vbox;
-		Gtk::Frame m_vframe;
-			Gtk::HBox m_vhbox;
-				Graph m_vgraph;
-				Gtk::VBox m_vvbox;
-					Gtk::Label m_v33label;
-					Gtk::Label m_v25label;
-					Gtk::Label m_v12label;
-		Gtk::Frame m_iframe;
-			Gtk::HBox m_ihbox;
-				Graph m_igraph;
-				Gtk::VBox m_ivbox;
-					Gtk::Label m_i33label;
-					Gtk::Label m_i25label;
-					Gtk::Label m_i12label;
-		Gtk::Frame m_pframe;
-			Gtk::HBox m_phbox;
-				Graph m_pgraph;
-				Gtk::VBox m_pvbox;
-					Gtk::Label m_p33label;
-					Gtk::Label m_p25label;
-					Gtk::Label m_p12label;
-		Gtk::Frame m_tframe;
-			Gtk::HBox m_thbox;
-				Graph m_tgraph;
-				Gtk::VBox m_tvbox;
-					Gtk::Label m_tpsulabel;
-					Gtk::Label m_tamblabel;
-	*/
+	
+	Gtk::HPaned m_rootsplitter;
+		Gtk::TreeView m_catbrowser;
+		Gtk::TreeView m_itemlist;
+		
+	Gtk::Menu m_catbrowser_popup;
+		Gtk::MenuItem m_catbrowser_popup_addcat;
 	
 protected:
+
+	bool OnClickCatBrowser(GdkEventButton* ev);
+	
+	void OnAddCategory();
 
 	//Initialization
 	void CreateWidgets();
