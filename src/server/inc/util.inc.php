@@ -47,10 +47,34 @@ function GetLocalizedString($id)
 }
 
 /** 
-	Set up the database connection
+	Set up the database connection and initialize the current session
  */
-function ConnectToDatabase()
+function SessionInit()
 {
+	/*
+	//connect to database
+	global $g_config;
+	global $g_dbconn;
+	global $g_tplvars;
+	$g_dbconn = mysql_connect($g_config['dbhost'], $g_config['dbuser'], $g_config['dbpass']);
+	if(!$g_dbconn)
+		dberror();
+		
+	//select db
+	mysql_select_db($g_config['dbname']);
+	
+	//create session
+	session_start();
+	if(!isset($_SESSION['uid']))
+		$_SESSION['uid'] = -1;
+	else if($_SESSION['uid'] > 0)
+		$g_tplvars['logout'] = 'Log out';
+		
+	//Set some default template variables
+	$g_tplvars['menu'] = menu();
+	$g_tplvars['titlebase'] = $g_config['sitename'];
+	$g_tplvars['company'] = $g_config['company'];
+	*/
 }
 
 // All application code has to be in this function
