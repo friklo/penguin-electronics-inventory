@@ -136,3 +136,46 @@ create table bomEntry(
 	foreign key(`bom_id`) references bom(`bom_id`) on delete cascade,
 	foreign key(`physicalDevice_id`) references physicalDevice(`physicalDevice_id`) on delete cascade
 	);
+
+drop table if exists distributor;
+create table distributor(
+	`distributor_id` int auto_increment not null,
+	`name` varchar(255) not null,
+	`website` varchar(255) not null,
+	`logo_url` varchar(255),
+	primary key(`distributor_id`)
+	);
+
+drop table if exists distributorPackage;
+create table distributorPackage(
+	`distributorPackage_id` int auto_increment not null,
+	`name` varchar(255) not null,
+	primary key(`distributorPackage_id`)
+	);
+insert into distributorPackage values('1', 'Bulk');
+insert into distributorPackage values('2', 'Tube');
+insert into distributorPackage values('3', 'Tray');
+insert into distributorPackage values('4', 'Tape and Reel');
+insert into distributorPackage values('5', 'Cut Tape');
+
+drop table if exists distributorDevice;
+create table distributorDevice(
+	`distributorDevice_id` int auto_increment not null,
+	`distributor_id` int not null,
+	`distributor_partnum` varchar(255) not null,
+	`distributor_url` varchar(255) not null,
+	`distributorPackage_id` int not null,
+	`physicalDevice_id` int not null,
+	foreign key(`distributor_id`) references distributor(`distributor_id`) on delete cascade,
+	foreign key(`physicalDevice_id`) references physicalDevice(`physicalDevice_id`) on delete cascade,
+	foreign key(`distributorPackage_id`) references distributorPackage(`distributorPackage_id`) on delete restrict,
+	primary key(`distributorDevice_id`)
+	);
+
+drop table if exists priceQuote;
+create table priceQuote(
+	`distributorDevice_id` int auto_increment not null,
+	`qty` int not null,
+	`price` int not null,
+	foreign key(`distributorDevice_id`) references distributorDevice(`distributorDevice_id`) on delete cascade
+	);
