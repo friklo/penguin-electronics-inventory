@@ -3,6 +3,9 @@
 -- @brief Deletes pretty much all content from the database and recreates table structure.
 -- You almost certainly do NOT want to use this in a production environment except for initial setup.
 
+-- TODO: Create indexes!!!
+-- The current schema is purely structural and has no indexing whatsoever.
+
 -- Create users table and add default admin:password account
 drop table if exists users;
 create table users(
@@ -31,16 +34,6 @@ create table datasheet(
 	primary key(`datasheet_id`)
 	);
 
-drop table if exists device;
-create table device(
-	`device_id` int auto_increment not null,
-	`name` varchar(255) not null,
-	`manufacturer_id` int not null,
-	`category_id` int not null,
-	foreign key(manufacturer_id) references manufacturer(manufacturer_id) on delete restrict,
-	primary key(`device_id`)
-	);
-
 drop table if exists datasheetDevices;
 create table datasheetDevices(
 	`datasheet_id` int auto_increment not null,
@@ -63,7 +56,55 @@ create table enumeratedValues(
 	`item_name` varchar(255) not null
 	);
 
--- TODO: categories and properties
+drop table if exists deviceCategory;
+create table deviceCategory(
+	`deviceCategory_id` int auto_increment not null,
+	`name` varchar(255) not null,
+	`parent_id` int,
+	foreign key(`parent_id`) references deviceCategory(`deviceCategory_id`) on delete cascade,
+	primary key(`deviceCategory_id`)
+	);
+	
+drop table if exists propertyDefinition;
+create table propertyDefinition(
+	`propertyDefinition_id` int auto_increment not null,
+	`name` varchar(255) not null,
+	`units` int not null,
+	`enum_id` int,
+	foreign key(`enum_id`) references enumeration(`enumeration_id`) on delete restrict,
+	primary key(`propertyDefinition_id`)
+	);
+
+drop table if exists deviceCategory_properties;
+create table deviceCategory_properties(
+	`deviceCategory_id` int not null,
+	`propertyDefinition_id` int not null,
+	foreign key(`deviceCategory_id`) references deviceCategory(`deviceCategory_id`) on delete cascade,
+	foreign key(`propertyDefinition_id`) references propertyDefinition(`propertyDefinition_id`) on delete cascade
+	);
+
+drop table if exists device;
+create table device(
+	`device_id` int auto_increment not null,
+	`name` varchar(255) not null,
+	`manufacturer_id` int not null,
+	`deviceCategory_id` int not null,
+	foreign key(manufacturer_id) references manufacturer(`manufacturer_id`) on delete restrict,
+	foreign key(`deviceCategory_id`) references deviceCategory(`deviceCategory_id`) on delete restrict,
+	primary key(`device_id`)
+	);
+	
+drop table if exists propertyValue;
+create table proprtyValue(
+	`device_id` int not null,
+	`propertyDefinition_id` int not null,
+	`integer_value` int,
+	`float_value` float,
+	`enumerated_value` int,
+	foreign key(`device_id`) references device(`device_id`) on delete cascade,
+	foreign key(`propertyDefinition_id`) references propertyDefinition(`propertyDefinition_id`) on delete cascade
+	-- TODO: figure out how to do enumerated foreign key constraints
+	);
 
 -- Create package class table and populate default classes
 drop table if exists packageClass;
