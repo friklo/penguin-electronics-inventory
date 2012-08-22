@@ -1,0 +1,3 @@
+-- @file setup.sql
+-- @author Andrew D. Zonenberg
+-- @brief Adds skeleton content to the database.
