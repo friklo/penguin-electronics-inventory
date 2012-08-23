@@ -52,12 +52,14 @@ public:
 		
 	Gtk::Menu m_catbrowser_popup;
 		Gtk::MenuItem m_catbrowser_popup_addcat;
+		Gtk::MenuItem m_catbrowser_popup_delcat;
 	
 protected:
 
 	bool OnClickCatBrowser(GdkEventButton* ev);
 	
 	void OnAddCategory();
+	void OnDeleteCategory();
 
 	//Initialization
 	void CreateWidgets();

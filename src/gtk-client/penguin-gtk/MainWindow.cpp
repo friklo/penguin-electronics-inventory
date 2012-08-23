@@ -31,6 +31,8 @@ MainWindow::MainWindow()
 	{
 		//Add widgets
 		CreateWidgets();
+		
+		//TODO: Load categories from server
 	}
 	catch(std::string err)
 	{
@@ -67,6 +69,9 @@ void MainWindow::CreateWidgets()
 	m_catbrowser_popup.add(m_catbrowser_popup_addcat);
 		m_catbrowser_popup_addcat.set_label("Add Category");
 		m_catbrowser_popup_addcat.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::OnAddCategory), true);
+	m_catbrowser_popup.add(m_catbrowser_popup_delcat);
+		m_catbrowser_popup_delcat.set_label("Delete Category");
+		m_catbrowser_popup_delcat.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::OnDeleteCategory), true);
 	m_catbrowser_popup.show_all();
 		
 	m_catbrowser.signal_button_press_event().connect(sigc::mem_fun(*this, &MainWindow::OnClickCatBrowser), false);
@@ -82,7 +87,17 @@ bool MainWindow::OnClickCatBrowser(GdkEventButton* event)
 		
 		//Popup menu
 		if(event->button == 3)
+		{
+			//Show all menu items
+			m_catbrowser_popup.show_all();
+			
+			//Don't show menu items that don't make sense in this context
+			Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();	
+			if(sel->count_selected_rows() == 0)
+				m_catbrowser_popup_delcat.hide();
+			
 			m_catbrowser_popup.popup(event->button, event->time);
+		}
 	}
 	
 	//call the existing handler
@@ -98,7 +113,7 @@ void MainWindow::OnAddCategory()
 		
 	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
 		
-	if( (sel->count_selected_rows() == 0) )
+	if(sel->count_selected_rows() == 0)
 	{		
 		//Add the new category to the end of the list
 		Gtk::TreeStore::iterator it = m_catmodel->append();
@@ -113,5 +128,26 @@ void MainWindow::OnAddCategory()
 		//and expand the parent so the new category is visible
 		Gtk::TreePath path(sel->get_selected());
 		m_catbrowser.expand_row(path, false);
-	}	
+	}
+	
+	//TODO: Sync with server
+}
+
+void MainWindow::OnDeleteCategory()
+{	
+	Gtk::MessageDialog dlg(	"Are you sure you want to delete this category and all of its subcategories?\n\n"
+							"This operation will fail if any components are still assigned to the category.",
+							false,
+							Gtk::MESSAGE_QUESTION,
+							Gtk::BUTTONS_YES_NO,
+							true);
+	int response = dlg.run();
+	if(response != Gtk::RESPONSE_YES)
+		return;
+		
+	//Delete the node
+	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
+	m_catmodel->erase(sel->get_selected());
+	
+	//TODO: sync with server
 }
