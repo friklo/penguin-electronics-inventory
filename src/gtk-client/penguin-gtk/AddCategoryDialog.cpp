@@ -14,5 +14,8 @@ AddCategoryDialog::AddCategoryDialog()
 	add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
 	add_button(Gtk::Stock::OK, Gtk::RESPONSE_ACCEPT);
 	
+	m_catname.set_activates_default(true);
+	set_default_response(Gtk::RESPONSE_ACCEPT);
+	
 	show_all();
 }
