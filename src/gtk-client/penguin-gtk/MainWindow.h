@@ -19,11 +19,21 @@
 #include <gtkmm/main.h>
 #include <gtkmm/paned.h>
 #include <gtkmm/scrolledwindow.h>
+#include <gtkmm/treestore.h>
 #include <gtkmm/widget.h>
 #include <gtkmm/window.h>
 
 #include <vector>
 #include <map>
+
+class CatBrowserColumns : public Gtk::TreeModel::ColumnRecord
+{
+public:
+	Gtk::TreeModelColumn<Glib::ustring> name;
+	
+	CatBrowserColumns()
+	{ add(name); }
+};
 
 class MainWindow : public Gtk::Window
 {
@@ -36,6 +46,8 @@ public:
 	
 	Gtk::HPaned m_rootsplitter;
 		Gtk::TreeView m_catbrowser;
+			Glib::RefPtr<Gtk::TreeStore> m_catmodel;
+			CatBrowserColumns m_catcols;
 		Gtk::TreeView m_itemlist;
 		
 	Gtk::Menu m_catbrowser_popup;

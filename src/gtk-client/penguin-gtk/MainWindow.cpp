@@ -16,6 +16,8 @@
 
 #include <stdint.h>
 
+#include "AddCategoryDialog.h"
+
 using namespace std;
 
 MainWindow::MainWindow()
@@ -48,8 +50,12 @@ MainWindow::~MainWindow()
 
 void MainWindow::CreateWidgets()
 {	
+	m_catmodel = Gtk::TreeStore::create(m_catcols);
+	
 	add(m_rootsplitter);
 		m_rootsplitter.add1(m_catbrowser);
+			m_catbrowser.set_model(m_catmodel);
+			m_catbrowser.append_column("Category", m_catcols.name);
 		m_rootsplitter.add2(m_itemlist);
 		m_rootsplitter.set_position(300);
 	
@@ -76,5 +82,12 @@ bool MainWindow::OnClickCatBrowser(GdkEventButton* event)
 
 void MainWindow::OnAddCategory()
 {
-	printf("add cat\n");
+	AddCategoryDialog dlg;
+	int result = dlg.run();
+	if(result != Gtk::RESPONSE_ACCEPT)
+		return;
+		
+	//Add the new category
+	Gtk::TreeStore::iterator it = m_catmodel->append();
+	it->set_value(0, dlg.m_catname.get_text());
 }

@@ -7,6 +7,7 @@ INCLUDE_DIRECTORIES(
 ###############################################################################
 #C++ compilation
 ADD_EXECUTABLE(penguin-gtk
+	AddCategoryDialog.cpp
 	MainWindow.cpp
 	
 	main.cpp
