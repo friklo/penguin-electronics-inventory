@@ -23,16 +23,23 @@
 #include <gtkmm/widget.h>
 #include <gtkmm/window.h>
 
+#include <string>
 #include <vector>
 #include <map>
+
+#include <curl/curl.h>
 
 class CatBrowserColumns : public Gtk::TreeModel::ColumnRecord
 {
 public:
 	Gtk::TreeModelColumn<Glib::ustring> name;
+	Gtk::TreeModelColumn<int> id;
 	
 	CatBrowserColumns()
-	{ add(name); }
+	{
+		add(name);
+		add(id);
+	}
 };
 
 class MainWindow : public Gtk::Window
@@ -40,7 +47,8 @@ class MainWindow : public Gtk::Window
 public:
 	MainWindow();
 	~MainWindow();
-	
+
+protected:
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//UI stuff
 	
@@ -53,9 +61,21 @@ public:
 	Gtk::Menu m_catbrowser_popup;
 		Gtk::MenuItem m_catbrowser_popup_addcat;
 		Gtk::MenuItem m_catbrowser_popup_delcat;
-	
-protected:
 
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	//Client-server communication
+	CURL* m_hCurl;
+	std::string m_curldata;
+	static size_t CurlRxCallback(char* ptr, size_t size, size_t nmemb, void* pThis);
+	size_t CurlRxCallback_real(char* ptr, size_t size, size_t nmemb);
+	
+	std::string PostRequest(std::string action, std::map<std::string, std::string> postdata);
+	
+	void RefreshCategoryList();
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	//Message handlers
+	
 	bool OnClickCatBrowser(GdkEventButton* ev);
 	
 	void OnAddCategory();
@@ -63,6 +83,7 @@ protected:
 	void OnCategoryEditStarted(Gtk::CellEditable* cell, const Glib::ustring& path);
 	void OnCategoryEditDone();
 
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	//Initialization
 	void CreateWidgets();
 };

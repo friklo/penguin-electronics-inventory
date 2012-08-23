@@ -18,6 +18,8 @@
 
 #include "AddCategoryDialog.h"
 
+#include <json/json.h>
+
 using namespace std;
 
 MainWindow::MainWindow()
@@ -27,19 +29,26 @@ MainWindow::MainWindow()
 	set_reallocate_redraws(true);
 	set_default_size(1280, 800);
 	
-	try
+	//Add widgets
+	CreateWidgets();
+	
+	//Initialize libcurl
+	m_hCurl = curl_easy_init();
+	if(!m_hCurl)
 	{
-		//Add widgets
-		CreateWidgets();
-		
-		//TODO: Load categories from server
-	}
-	catch(std::string err)
-	{
-		cerr << err.c_str();
+		printf("curl_easy_init() failed\n");
 		exit(-1);
 	}
+	curl_easy_setopt(m_hCurl, CURLOPT_VERBOSE, 0);												//no verbose debug output
+	curl_easy_setopt(m_hCurl, CURLOPT_HEADER, 0);												//we don't want to see the headers
+	curl_easy_setopt(m_hCurl, CURLOPT_NOPROGRESS, 1);											//don't show progress of operations
+	curl_easy_setopt(m_hCurl, CURLOPT_WRITEFUNCTION, &MainWindow::CurlRxCallback);				//callback for data coming from server to us
+	curl_easy_setopt(m_hCurl, CURLOPT_WRITEDATA, this);
+	curl_easy_setopt(m_hCurl, CURLOPT_NOPROXY, "*");											//do not use proxy server
 	
+	//Load categories from server
+	RefreshCategoryList();
+
 	//Done adding widgets
 	show_all();
 	
@@ -47,7 +56,7 @@ MainWindow::MainWindow()
 
 MainWindow::~MainWindow()
 {
-
+	curl_easy_cleanup(m_hCurl);
 }
 
 void MainWindow::CreateWidgets()
@@ -113,25 +122,60 @@ void MainWindow::OnAddCategory()
 		return;
 		
 	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
-		
+	
+	//Get ID of parent
+	int parent_id = -1;
+	
+	//Ask the server to add the category	
+	std::map<string, string> args;
+	args["catname"] = dlg.m_catname.get_text();
+	char sparent[16];
+	snprintf(sparent, 15, "%d", parent_id);
+	args["parent"] = sparent;
+	string server_result = PostRequest("add_category", args);
+	
+	//Parse the result
+	Json::Reader reader;
+	Json::Value root;
+	if(!reader.parse(server_result, root, false))
+	{
+		printf("Couldn't parse JSON data\n");
+		return;
+	}
+	
+	//Check status
+	if(root.get("status", "fail").asString() != "ok")
+	{
+		Gtk::MessageDialog dlg(	string("Server-side error: ") + root.get("error_code", "Unspecified error").asString(),
+							false,
+							Gtk::MESSAGE_ERROR,
+							Gtk::BUTTONS_OK,
+							true);
+		dlg.run();
+		return;
+	}
+	
+	//All OK, get category ID
+	int catid = root.get("catid", 1).asInt();
+	
 	if(sel->count_selected_rows() == 0)
 	{		
 		//Add the new category to the end of the list
 		Gtk::TreeStore::iterator it = m_catmodel->append();
 		it->set_value(0, dlg.m_catname.get_text());
+		it->set_value(1, catid);
 	}
 	else
 	{
 		//Add as a child of the current selection 
 		Gtk::TreeStore::iterator it = m_catmodel->append(sel->get_selected()->children());
 		it->set_value(0, dlg.m_catname.get_text());
+		it->set_value(1, catid);
 		
 		//and expand the parent so the new category is visible
 		Gtk::TreePath path(sel->get_selected());
 		m_catbrowser.expand_row(path, false);
 	}
-	
-	//TODO: Sync with server
 }
 
 void MainWindow::OnDeleteCategory()
@@ -167,4 +211,57 @@ void MainWindow::OnCategoryEditDone()
 	printf("editing done (new value = %s)\n", newval.c_str());
 	
 	//TODO: sync with server
+}
+
+size_t MainWindow::CurlRxCallback(char* ptr, size_t size, size_t nmemb, void* pThis)
+{
+	return reinterpret_cast<MainWindow*>(pThis)->CurlRxCallback_real(ptr, size, nmemb);
+}
+
+size_t MainWindow::CurlRxCallback_real(char* ptr, size_t size, size_t nmemb)
+{
+	size_t ksize = size*nmemb;
+	for(size_t i=0; i<ksize; i++)
+		m_curldata += ptr[i];
+	return ksize;
+}
+
+void MainWindow::RefreshCategoryList()
+{
+	printf("TODO: refresh category list\n");
+	
+	/*
+	string s;
+	std::map<string, string> args;
+	args["hello"] = "world";
+	string foobar = PostRequest("hai", args);
+	*/
+}
+
+string MainWindow::PostRequest(string action, std::map<string, string> args)
+{
+	m_curldata = "";
+	
+	//Generate the URL
+	char url[1024];
+	snprintf(url, 1023, "%s/penguinserver.php?action=%s", "http://inventory-dev.drawersteak.com", action.c_str());
+	curl_easy_setopt(m_hCurl, CURLOPT_URL, url);
+		
+	//Generate the POST data
+	curl_httppost* postdata = NULL;
+	curl_httppost* last = NULL;
+	for(std::map<string, string>::iterator it=args.begin(); it != args.end(); it++)
+		curl_formadd(&postdata, &last, CURLFORM_COPYNAME, it->first.c_str(), CURLFORM_COPYCONTENTS, it->second.c_str(), CURLFORM_END);
+	curl_easy_setopt(m_hCurl, CURLOPT_HTTPPOST, postdata);
+		
+	//Send the request
+	if(0 != curl_easy_perform(m_hCurl))
+	{
+		printf("foobaz\n");
+		printf("WARNING: curl_easy_perform() failed\n");
+		return "";
+	}
+	curl_formfree(postdata);
+	
+	return m_curldata;
 }
