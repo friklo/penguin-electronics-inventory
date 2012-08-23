@@ -15,6 +15,9 @@ function main()
 	case 'add_category':
 		AddCategory();
 		break;
+	case 'list_categories':
+		ListCategories();
+		break;
 	}
 }
 
@@ -49,5 +52,47 @@ function AddCategory()
 	}
 	
 	echo json_encode($json_out);
+}
+
+function ListCategories()
+{
+	global $g_dbconn;
+	$result = $g_dbconn->query('select * from deviceCategory where parent_id is NULL');
+	$json_out = array();
+	if(!$result)
+	{
+		$json_out['status'] = 'fail';
+		$json_out['error_code'] = DatabaseError();
+		die(json_encode($json_out));
+	}
+	
+	$json_out['cats'] = array();
+	while($row = $result->fetch_object())
+		array_push($json_out['cats'], DumpCategory($row));
+			
+	$json_out['status'] = 'ok';
+	echo json_encode($json_out);
+}
+
+function DumpCategory($row)
+{
+	$ret = array();
+	$ret['name'] = $row->name;
+	$ret['id'] = $row->deviceCategory_id;
+	
+	global $g_dbconn;
+	$result = $g_dbconn->query('select * from deviceCategory where parent_id = \'' . $row->id . '\'');
+	if(!$result)
+	{
+		$ret['status'] = 'fail';
+		$ret['error_code'] = DatabaseError();
+		die(json_encode($ret));
+	}
+	
+	$ret['children'] = array();
+	while($r = $result->fetch_object())
+		array_push($ret['children'], DumpCategory($r));
+	
+	return $ret;
 }
 ?>
