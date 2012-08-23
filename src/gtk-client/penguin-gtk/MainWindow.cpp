@@ -57,7 +57,7 @@ void MainWindow::CreateWidgets()
 	add(m_rootsplitter);
 		m_rootsplitter.add1(m_catbrowser);
 			m_catbrowser.set_model(m_catmodel);
-			m_catbrowser.append_column("Category", m_catcols.name);
+			m_catbrowser.append_column_editable("Category", m_catcols.name);
 			m_catbrowser.get_column(0)->set_sort_column(m_catcols.name);
 			m_catbrowser.get_column(0)->clicked();
 			m_catbrowser.enable_model_drag_source();
@@ -73,8 +73,9 @@ void MainWindow::CreateWidgets()
 		m_catbrowser_popup_delcat.set_label("Delete Category");
 		m_catbrowser_popup_delcat.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::OnDeleteCategory), true);
 	m_catbrowser_popup.show_all();
-		
+	
 	m_catbrowser.signal_button_press_event().connect(sigc::mem_fun(*this, &MainWindow::OnClickCatBrowser), false);
+	m_catbrowser.get_column_cell_renderer(0)->signal_editing_started().connect(sigc::mem_fun(*this, &MainWindow::OnCategoryEditStarted));
 }
 
 bool MainWindow::OnClickCatBrowser(GdkEventButton* event)
@@ -148,6 +149,22 @@ void MainWindow::OnDeleteCategory()
 	//Delete the node
 	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
 	m_catmodel->erase(sel->get_selected());
+	
+	//TODO: sync with server
+}
+
+void MainWindow::OnCategoryEditStarted(Gtk::CellEditable* cell, const Glib::ustring& /*path*/)
+{
+	cell->signal_editing_done().connect(sigc::mem_fun(*this, &MainWindow::OnCategoryEditDone));
+}
+
+void MainWindow::OnCategoryEditDone()
+{
+	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
+	string newval;
+	sel->get_selected()->get_value(0, newval);
+	
+	printf("editing done (new value = %s)\n", newval.c_str());
 	
 	//TODO: sync with server
 }

@@ -60,6 +60,8 @@ protected:
 	
 	void OnAddCategory();
 	void OnDeleteCategory();
+	void OnCategoryEditStarted(Gtk::CellEditable* cell, const Glib::ustring& path);
+	void OnCategoryEditDone();
 
 	//Initialization
 	void CreateWidgets();
