@@ -56,6 +56,11 @@ void MainWindow::CreateWidgets()
 		m_rootsplitter.add1(m_catbrowser);
 			m_catbrowser.set_model(m_catmodel);
 			m_catbrowser.append_column("Category", m_catcols.name);
+			m_catbrowser.get_column(0)->set_sort_column(m_catcols.name);
+			m_catbrowser.get_column(0)->clicked();
+			m_catbrowser.enable_model_drag_source();
+			m_catbrowser.enable_model_drag_dest();
+			m_catbrowser.get_selection()->set_mode(Gtk::SELECTION_SINGLE);
 		m_rootsplitter.add2(m_itemlist);
 		m_rootsplitter.set_position(300);
 	
@@ -71,6 +76,10 @@ bool MainWindow::OnClickCatBrowser(GdkEventButton* event)
 {
 	if(event->type == GDK_BUTTON_PRESS)
 	{
+		Gtk::TreeModel::Path path;
+		if(!m_catbrowser.get_path_at_pos(event->x, event->y, path))		//TODO: bin window check
+			m_catbrowser.get_selection()->unselect_all();
+		
 		//Popup menu
 		if(event->button == 3)
 			m_catbrowser_popup.popup(event->button, event->time);
@@ -87,7 +96,22 @@ void MainWindow::OnAddCategory()
 	if(result != Gtk::RESPONSE_ACCEPT)
 		return;
 		
-	//Add the new category
-	Gtk::TreeStore::iterator it = m_catmodel->append();
-	it->set_value(0, dlg.m_catname.get_text());
+	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
+		
+	if( (sel->count_selected_rows() == 0) )
+	{		
+		//Add the new category to the end of the list
+		Gtk::TreeStore::iterator it = m_catmodel->append();
+		it->set_value(0, dlg.m_catname.get_text());
+	}
+	else
+	{
+		//Add as a child of the current selection 
+		Gtk::TreeStore::iterator it = m_catmodel->append(sel->get_selected()->children());
+		it->set_value(0, dlg.m_catname.get_text());
+		
+		//and expand the parent so the new category is visible
+		Gtk::TreePath path(sel->get_selected());
+		m_catbrowser.expand_row(path, false);
+	}	
 }
