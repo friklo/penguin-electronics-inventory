@@ -22,6 +22,48 @@ function ReadGETInt($name, $default_value)
 		return intval($default_value);
 }
 
+/**
+	@brief Returns a string parameter from the GET request or a default value if unspecified
+	
+	@param name				Name of the parameter
+	@param default_value	Default value if $_GET[name] is not set
+ */
+function ReadGETString($name, $default_value)
+{
+	if(isset($_GET[$name]))
+		return $_GET[$name];
+	else
+		return $default_value;
+}
+
+/**
+	@brief Returns an integer parameter from the POST request or a default value if unspecified
+	
+	@param name				Name of the parameter
+	@param default_value	Default value if $_POST[name] is not set
+ */
+function ReadPOSTInt($name, $default_value)
+{
+	if(isset($_POST[$name]))
+		return intval($_POST[$name]);
+	else
+		return intval($default_value);
+}
+
+/**
+	@brief Returns a string parameter from the POST request or a default value if unspecified
+	
+	@param name				Name of the parameter
+	@param default_value	Default value if $_POST[name] is not set
+ */
+function ReadPOSTString($name, $default_value)
+{
+	if(isset($_POST[$name]))
+		return $_POST[$name];
+	else
+		return $default_value;
+}
+
 /** 
 	Returns an integer parameter from the configuration settings or a default value if unspecified
 	
@@ -62,7 +104,7 @@ function GetLocalizedString($id)
 }
 
 /**
-	@brief Displays a database error
+	@brief Returns a database error string
  */
 function DatabaseError()
 {
@@ -70,12 +112,21 @@ function DatabaseError()
 	if(ReadConfigInt('verbose_db_errors', 0))
 	{
 		if($g_dbconn->connect_error)
-			die(GetLocalizedString('database-error') .  $g_dbconn->connect_error);
+			return GetLocalizedString('database-error') .  $g_dbconn->connect_error;
 		else
-			die(GetLocalizedString('database-error') .  $g_dbconn->error);
+			return GetLocalizedString('database-error') .  $g_dbconn->error;
 	}
 	else
-		die(GetLocalizedString('generic-error'));
+		return GetLocalizedString('generic-error');
+}
+
+/**
+	@brief Escapes characters that have special meanings in SQL
+ */
+function DatabaseSanitize($str)
+{
+	global $g_dbconn;
+	return $g_dbconn->real_escape_string($str);
 }
 
 /** 
@@ -100,6 +151,8 @@ function SessionInit()
 }
 
 // All application code has to be in this function
+SessionInit();
 main();
-$g_dbconn->close();
+if($g_dbconn)
+	$g_dbconn->close();
 ?>

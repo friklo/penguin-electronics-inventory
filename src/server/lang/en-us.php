@@ -4,7 +4,7 @@
 	@author Andrew D. Zonenberg
 	@brief Locale-specific strings for EN-US
 	
-	Try to avoid using HTML or formatting in these strings unless absolutely necessary.
+	Do not use HTML or formatting in these strings; different clients may use different markup schemes (or none at all).
  */
  
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
