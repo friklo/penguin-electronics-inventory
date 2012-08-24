@@ -15,8 +15,16 @@ function main()
 	case 'add_category':
 		AddCategory();
 		break;
+	case 'delete_category':
+		DeleteCategory();
+		break;
 	case 'list_categories':
 		ListCategories();
+		break;
+	default:
+		$json_out['status'] = 'fail';
+		$json_out['error_code'] = 'Unrecognized action';
+		echo json_encode($json_out);
 		break;
 	}
 }
@@ -50,6 +58,24 @@ function AddCategory()
 			$json_out['catid'] = $g_dbconn->insert_id;
 		}
 	}
+	
+	echo json_encode($json_out);
+}
+
+function DeleteCategory()
+{
+	global $g_dbconn;
+	$catid = ReadPOSTInt('catid', '-1');
+	
+	$result = $g_dbconn->query('delete from deviceCategory where deviceCategory_id = \'' . $catid . '\' limit 1');
+	if(!$result)
+	{
+		$json_out['status'] = 'fail';
+		$json_out['error_code'] = DatabaseError();
+	}
+	
+	else
+		$json_out['status'] = 'ok';
 	
 	echo json_encode($json_out);
 }
