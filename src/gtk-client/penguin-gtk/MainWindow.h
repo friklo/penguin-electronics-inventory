@@ -17,6 +17,7 @@
 #include <gtkmm/liststore.h>
 #include <gtkmm/listviewtext.h>
 #include <gtkmm/main.h>
+#include <gtkmm/notebook.h>
 #include <gtkmm/paned.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/treestore.h>
@@ -58,7 +59,11 @@ protected:
 			Gtk::TreeView m_catbrowser;
 				Glib::RefPtr<Gtk::TreeStore> m_catmodel;
 				CatBrowserColumns m_catcols;
-		Gtk::TreeView m_itemlist;
+		Gtk::Notebook m_itemtabs;
+			Gtk::TreeView m_itemlist;
+			//TODO: List of item properties tabs
+			Gtk::TreeView m_bomlist;
+			Gtk::VBox m_packagemanager;
 		
 	Gtk::Menu m_catbrowser_popup;
 		Gtk::MenuItem m_catbrowser_popup_addcat;

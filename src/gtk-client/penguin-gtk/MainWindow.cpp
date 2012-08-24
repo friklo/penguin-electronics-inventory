@@ -75,7 +75,12 @@ void MainWindow::CreateWidgets()
 				m_catbrowser.enable_model_drag_source();
 				m_catbrowser.enable_model_drag_dest();
 				m_catbrowser.get_selection()->set_mode(Gtk::SELECTION_SINGLE);
-		m_rootsplitter.add2(m_itemlist);
+		m_rootsplitter.add2(m_itemtabs);
+			m_itemtabs.append_page(m_itemlist, "Inventory Browser");
+			m_itemtabs.append_page(m_bomlist, "BOM Browser");
+			m_itemtabs.append_page(m_packagemanager, "Package Types");
+			//TODO: set reorderable on some tabs
+			m_itemtabs.set_scrollable();
 		m_rootsplitter.set_position(300);
 	
 	m_catbrowser_popup.add(m_catbrowser_popup_addcat);
