@@ -44,6 +44,36 @@ public:
 	}
 };
 
+class PackageListColumns : public Gtk::TreeModel::ColumnRecord
+{
+public:
+	Gtk::TreeModelColumn<int> id;
+	Gtk::TreeModelColumn<Glib::ustring> shortname;
+	
+	PackageListColumns()
+	{
+		add(id);
+		add(shortname);
+	}
+};
+
+class ManufacturerListColumns : public Gtk::TreeModel::ColumnRecord
+{
+public:
+	Gtk::TreeModelColumn<int> id;
+	Gtk::TreeModelColumn<Glib::ustring> name;
+	Gtk::TreeModelColumn<Glib::ustring> website;
+	Gtk::TreeModelColumn<Glib::ustring> logo_url;
+	
+	ManufacturerListColumns()
+	{
+		add(id);
+		add(name);
+		add(website);
+		add(logo_url);
+	}
+};
+
 class MainWindow : public Gtk::Window
 {
 public:
@@ -64,7 +94,15 @@ protected:
 			//TODO: List of item properties tabs
 			Gtk::TreeView m_bomlist;
 			Gtk::VBox m_packagemanager;
-		
+				Gtk::Frame m_packageframe;
+					Gtk::ScrolledWindow m_packagescroller;
+						Gtk::TreeView m_packagelist;
+							Glib::RefPtr<Gtk::TreeStore> m_packagemodel;
+							PackageListColumns m_packagecols;
+				Gtk::Frame m_packageclassframe;
+			Gtk::TreeView m_manufacturerList;
+				Glib::RefPtr<Gtk::TreeStore> m_manufacturermodel;
+				ManufacturerListColumns m_manufacturercols;
 	Gtk::Menu m_catbrowser_popup;
 		Gtk::MenuItem m_catbrowser_popup_addcat;
 		Gtk::MenuItem m_catbrowser_popup_delcat;

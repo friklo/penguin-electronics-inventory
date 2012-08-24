@@ -63,6 +63,8 @@ MainWindow::~MainWindow()
 void MainWindow::CreateWidgets()
 {	
 	m_catmodel = Gtk::TreeStore::create(m_catcols);
+	m_packagemodel = Gtk::TreeStore::create(m_packagecols);
+	m_manufacturermodel = Gtk::TreeStore::create(m_manufacturercols);
 	
 	add(m_rootsplitter);
 		m_rootsplitter.add1(m_catscroller);
@@ -79,6 +81,21 @@ void MainWindow::CreateWidgets()
 			m_itemtabs.append_page(m_itemlist, "Inventory Browser");
 			m_itemtabs.append_page(m_bomlist, "BOM Browser");
 			m_itemtabs.append_page(m_packagemanager, "Package Types");
+				m_packagemanager.pack_start(m_packageframe);
+					m_packageframe.set_label("Packages");
+					m_packageframe.add(m_packagescroller);
+						m_packagescroller.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+						m_packagescroller.add(m_packagelist);
+							m_packagelist.set_model(m_packagemodel);
+							m_packagelist.append_column_editable("Short name", m_packagecols.shortname);
+				m_packagemanager.pack_start(m_packageclassframe);
+					m_packageclassframe.set_label("Package Classes");
+			m_itemtabs.append_page(m_manufacturerList, "Manufacturers");
+				m_manufacturerList.set_model(m_manufacturermodel);
+				m_manufacturerList.append_column_editable("Name", m_manufacturercols.name);
+				m_manufacturerList.append_column_editable("Website", m_manufacturercols.website);
+				m_manufacturerList.append_column_editable("Logo", m_manufacturercols.logo_url);
+				
 			//TODO: set reorderable on some tabs
 			m_itemtabs.set_scrollable();
 		m_rootsplitter.set_position(300);
