@@ -292,9 +292,40 @@ void MainWindow::OnCategoryEditDone()
 	string newval;
 	sel->get_selected()->get_value(0, newval);
 	
-	printf("editing done (new value = %s)\n", newval.c_str());
+	//Get ID of row
+	int row_id = -1;
+	if(sel->count_selected_rows() == 0)
+		return;
+	sel->get_selected()->get_value(1, row_id);
 	
-	//TODO: sync with server
+	//Ask the server to rename the category	
+	std::map<string, string> args;
+	char sid[16];
+	snprintf(sid, 15, "%d", row_id);
+	args["catid"] = sid;
+	args["name"] = newval;
+	string server_result = PostRequest("rename_category", args);
+	
+	//Parse the result
+	Json::Reader reader;
+	Json::Value root;
+	if(!reader.parse(server_result, root, false))
+	{
+		printf("Couldn't parse JSON data\n");
+		return;
+	}
+
+	//Check status
+	if(root.get("status", "fail").asString() != "ok")
+	{
+		Gtk::MessageDialog dlg(	string("Server-side error: ") + root.get("error_code", "Unspecified error").asString(),
+							false,
+							Gtk::MESSAGE_ERROR,
+							Gtk::BUTTONS_OK,
+							true);
+		dlg.run();
+		return;
+	}
 }
 
 void MainWindow::RefreshCategoryList()
