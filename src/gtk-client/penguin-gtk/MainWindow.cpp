@@ -18,9 +18,10 @@
 
 #include "AddCategoryDialog.h"
 
-#include <json/json.h>
-
 using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Initialization
 
 MainWindow::MainWindow()
 {
@@ -86,6 +87,53 @@ void MainWindow::CreateWidgets()
 	m_catbrowser.signal_button_press_event().connect(sigc::mem_fun(*this, &MainWindow::OnClickCatBrowser), false);
 	m_catbrowser.get_column_cell_renderer(0)->signal_editing_started().connect(sigc::mem_fun(*this, &MainWindow::OnCategoryEditStarted));
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// General client-server communication
+
+size_t MainWindow::CurlRxCallback(char* ptr, size_t size, size_t nmemb, void* pThis)
+{
+	return reinterpret_cast<MainWindow*>(pThis)->CurlRxCallback_real(ptr, size, nmemb);
+}
+
+size_t MainWindow::CurlRxCallback_real(char* ptr, size_t size, size_t nmemb)
+{
+	size_t ksize = size*nmemb;
+	for(size_t i=0; i<ksize; i++)
+		m_curldata += ptr[i];
+	return ksize;
+}
+
+string MainWindow::PostRequest(string action, std::map<string, string> args)
+{
+	m_curldata = "";
+	
+	//Generate the URL
+	char url[1024];
+	snprintf(url, 1023, "%s/penguinserver.php?action=%s", "http://inventory-dev.drawersteak.com", action.c_str());
+	curl_easy_setopt(m_hCurl, CURLOPT_URL, url);
+		
+	//Generate the POST data
+	curl_httppost* postdata = NULL;
+	curl_httppost* last = NULL;
+	for(std::map<string, string>::iterator it=args.begin(); it != args.end(); it++)
+		curl_formadd(&postdata, &last, CURLFORM_COPYNAME, it->first.c_str(), CURLFORM_COPYCONTENTS, it->second.c_str(), CURLFORM_END);
+	curl_easy_setopt(m_hCurl, CURLOPT_HTTPPOST, postdata);
+		
+	//Send the request
+	if(0 != curl_easy_perform(m_hCurl))
+	{
+		printf("foobaz\n");
+		printf("WARNING: curl_easy_perform() failed\n");
+		return "";
+	}
+	curl_formfree(postdata);
+	
+	return m_curldata;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Category list
 
 bool MainWindow::OnClickCatBrowser(GdkEventButton* event)
 {
@@ -213,55 +261,54 @@ void MainWindow::OnCategoryEditDone()
 	//TODO: sync with server
 }
 
-size_t MainWindow::CurlRxCallback(char* ptr, size_t size, size_t nmemb, void* pThis)
-{
-	return reinterpret_cast<MainWindow*>(pThis)->CurlRxCallback_real(ptr, size, nmemb);
-}
-
-size_t MainWindow::CurlRxCallback_real(char* ptr, size_t size, size_t nmemb)
-{
-	size_t ksize = size*nmemb;
-	for(size_t i=0; i<ksize; i++)
-		m_curldata += ptr[i];
-	return ksize;
-}
-
 void MainWindow::RefreshCategoryList()
 {
-	printf("TODO: refresh category list\n");
-	
-	/*
-	string s;
 	std::map<string, string> args;
-	args["hello"] = "world";
-	string foobar = PostRequest("hai", args);
-	*/
+	string server_result = PostRequest("list_categories", args);
+	
+	//Parse the result
+	Json::Reader reader;
+	Json::Value root;
+	if(!reader.parse(server_result, root, false))
+	{
+		printf("Couldn't parse JSON data\n");
+		exit(-1);
+	}
+	
+	//Check status
+	if(root.get("status", "fail").asString() != "ok")
+	{
+		Gtk::MessageDialog dlg(	string("Server-side error: ") + root.get("error_code", "Unspecified error").asString(),
+							false,
+							Gtk::MESSAGE_ERROR,
+							Gtk::BUTTONS_OK,
+							true);
+		dlg.run();
+		return;
+	}
+	
+	Json::Value cats = root.get("cats", Json::Value::null);
+	if(cats.isNull())
+	{
+		Gtk::MessageDialog dlg(	"No category list provided by server",
+							false,
+							Gtk::MESSAGE_ERROR,
+							Gtk::BUTTONS_OK,
+							true);
+		dlg.run();
+		return;
+	}
+	
+	//Load categories into tree view
+	for(Json::Value::iterator it = cats.begin(); it != cats.end(); it++)
+		ImportCategory(*it);
 }
 
-string MainWindow::PostRequest(string action, std::map<string, string> args)
+void MainWindow::ImportCategory(const Json::Value& cat)
 {
-	m_curldata = "";
-	
-	//Generate the URL
-	char url[1024];
-	snprintf(url, 1023, "%s/penguinserver.php?action=%s", "http://inventory-dev.drawersteak.com", action.c_str());
-	curl_easy_setopt(m_hCurl, CURLOPT_URL, url);
-		
-	//Generate the POST data
-	curl_httppost* postdata = NULL;
-	curl_httppost* last = NULL;
-	for(std::map<string, string>::iterator it=args.begin(); it != args.end(); it++)
-		curl_formadd(&postdata, &last, CURLFORM_COPYNAME, it->first.c_str(), CURLFORM_COPYCONTENTS, it->second.c_str(), CURLFORM_END);
-	curl_easy_setopt(m_hCurl, CURLOPT_HTTPPOST, postdata);
-		
-	//Send the request
-	if(0 != curl_easy_perform(m_hCurl))
-	{
-		printf("foobaz\n");
-		printf("WARNING: curl_easy_perform() failed\n");
-		return "";
-	}
-	curl_formfree(postdata);
-	
-	return m_curldata;
+	//Add the new category to the end of the list
+	Gtk::TreeStore::iterator it = m_catmodel->append();
+	it->set_value(0, cat.get("name", "Unnamed Category").asString());
+	it->set_value(1, cat.get("id", -1).asInt());
 }
+

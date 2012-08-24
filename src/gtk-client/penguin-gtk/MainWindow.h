@@ -28,6 +28,7 @@
 #include <map>
 
 #include <curl/curl.h>
+#include <json/json.h>
 
 class CatBrowserColumns : public Gtk::TreeModel::ColumnRecord
 {
@@ -72,6 +73,7 @@ protected:
 	std::string PostRequest(std::string action, std::map<std::string, std::string> postdata);
 	
 	void RefreshCategoryList();
+	void ImportCategory(const Json::Value& cat);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//Message handlers
