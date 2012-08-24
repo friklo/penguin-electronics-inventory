@@ -81,7 +81,7 @@ function DumpCategory($row)
 	$ret['id'] = intval($row->deviceCategory_id);
 	
 	global $g_dbconn;
-	$result = $g_dbconn->query('select * from deviceCategory where parent_id = \'' . $row->id . '\'');
+	$result = $g_dbconn->query('select * from deviceCategory where parent_id = \'' . $row->deviceCategory_id . '\'');
 	if(!$result)
 	{
 		$ret['status'] = 'fail';
