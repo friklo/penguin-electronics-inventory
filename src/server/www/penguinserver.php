@@ -21,6 +21,9 @@ function main()
 	case 'list_categories':
 		ListCategories();
 		break;
+	case 'rename_category':
+		RenameCategory();
+		break;
 	default:
 		$json_out['status'] = 'fail';
 		$json_out['error_code'] = 'Unrecognized action';
@@ -120,5 +123,24 @@ function DumpCategory($row)
 		array_push($ret['children'], DumpCategory($r));
 	
 	return $ret;
+}
+
+function RenameCategory()
+{
+	global $g_dbconn;
+	$catid = ReadPOSTInt('catid', '-1');
+	$name = DatabaseSanitize(ReadPOSTString('name',''));
+	
+	$result = $g_dbconn->query('update deviceCategory set name = \'' . $name . '\' where deviceCategory_id = \'' . $catid . '\' limit 1');
+	if(!$result)
+	{
+		$json_out['status'] = 'fail';
+		$json_out['error_code'] = DatabaseError();
+	}
+	
+	else
+		$json_out['status'] = 'ok';
+	
+	echo json_encode($json_out);
 }
 ?>
