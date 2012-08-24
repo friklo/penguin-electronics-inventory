@@ -65,14 +65,16 @@ void MainWindow::CreateWidgets()
 	m_catmodel = Gtk::TreeStore::create(m_catcols);
 	
 	add(m_rootsplitter);
-		m_rootsplitter.add1(m_catbrowser);
-			m_catbrowser.set_model(m_catmodel);
-			m_catbrowser.append_column_editable("Category", m_catcols.name);
-			m_catbrowser.get_column(0)->set_sort_column(m_catcols.name);
-			m_catbrowser.get_column(0)->clicked();
-			m_catbrowser.enable_model_drag_source();
-			m_catbrowser.enable_model_drag_dest();
-			m_catbrowser.get_selection()->set_mode(Gtk::SELECTION_SINGLE);
+		m_rootsplitter.add1(m_catscroller);
+			m_catscroller.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+			m_catscroller.add(m_catbrowser);
+				m_catbrowser.set_model(m_catmodel);
+				m_catbrowser.append_column_editable("Category", m_catcols.name);
+				m_catbrowser.get_column(0)->set_sort_column(m_catcols.name);
+				m_catbrowser.get_column(0)->clicked();
+				m_catbrowser.enable_model_drag_source();
+				m_catbrowser.enable_model_drag_dest();
+				m_catbrowser.get_selection()->set_mode(Gtk::SELECTION_SINGLE);
 		m_rootsplitter.add2(m_itemlist);
 		m_rootsplitter.set_position(300);
 	
@@ -230,6 +232,13 @@ void MainWindow::OnAddCategory()
 
 void MainWindow::OnDeleteCategory()
 {	
+	//Get ID of row
+	int row_id = -1;
+	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
+	if(sel->count_selected_rows() == 0)
+		return;
+	sel->get_selected()->get_value(1, row_id);
+	
 	Gtk::MessageDialog dlg(	"Are you sure you want to delete this category and all of its subcategories?\n\n"
 							"This operation will fail if any components are still assigned to the category.",
 							false,
@@ -240,11 +249,36 @@ void MainWindow::OnDeleteCategory()
 	if(response != Gtk::RESPONSE_YES)
 		return;
 		
-	//Delete the node
-	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
-	m_catmodel->erase(sel->get_selected());
+	//Ask the server to add the category	
+	std::map<string, string> args;
+	char sid[16];
+	snprintf(sid, 15, "%d", row_id);
+	args["catid"] = sid;
+	string server_result = PostRequest("delete_category", args);
 	
-	//TODO: sync with server
+	//Parse the result
+	Json::Reader reader;
+	Json::Value root;
+	if(!reader.parse(server_result, root, false))
+	{
+		printf("Couldn't parse JSON data\n");
+		return;
+	}
+
+	//Check status
+	if(root.get("status", "fail").asString() != "ok")
+	{
+		Gtk::MessageDialog dlg(	string("Server-side error: ") + root.get("error_code", "Unspecified error").asString(),
+							false,
+							Gtk::MESSAGE_ERROR,
+							Gtk::BUTTONS_OK,
+							true);
+		dlg.run();
+		return;
+	}
+		
+	//Delete the node
+	m_catmodel->erase(sel->get_selected());
 }
 
 void MainWindow::OnCategoryEditStarted(Gtk::CellEditable* cell, const Glib::ustring& /*path*/)

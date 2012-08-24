@@ -54,9 +54,10 @@ protected:
 	//UI stuff
 	
 	Gtk::HPaned m_rootsplitter;
-		Gtk::TreeView m_catbrowser;
-			Glib::RefPtr<Gtk::TreeStore> m_catmodel;
-			CatBrowserColumns m_catcols;
+		Gtk::ScrolledWindow m_catscroller;
+			Gtk::TreeView m_catbrowser;
+				Glib::RefPtr<Gtk::TreeStore> m_catmodel;
+				CatBrowserColumns m_catcols;
 		Gtk::TreeView m_itemlist;
 		
 	Gtk::Menu m_catbrowser_popup;
