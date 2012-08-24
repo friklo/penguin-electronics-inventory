@@ -74,6 +74,7 @@ protected:
 	
 	void RefreshCategoryList();
 	void ImportCategory(const Json::Value& cat);
+	void ImportCategory(const Json::Value& cat, Gtk::TreeStore::iterator parent);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//Message handlers

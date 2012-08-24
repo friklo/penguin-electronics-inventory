@@ -173,6 +173,8 @@ void MainWindow::OnAddCategory()
 	
 	//Get ID of parent
 	int parent_id = -1;
+	if(sel->count_selected_rows() != 0)
+		sel->get_selected()->get_value(1, parent_id);
 	
 	//Ask the server to add the category	
 	std::map<string, string> args;
@@ -302,13 +304,36 @@ void MainWindow::RefreshCategoryList()
 	//Load categories into tree view
 	for(Json::Value::iterator it = cats.begin(); it != cats.end(); it++)
 		ImportCategory(*it);
+	
+	m_catbrowser.expand_all();
 }
 
 void MainWindow::ImportCategory(const Json::Value& cat)
 {
 	//Add the new category to the end of the list
-	Gtk::TreeStore::iterator it = m_catmodel->append();
-	it->set_value(0, cat.get("name", "Unnamed Category").asString());
-	it->set_value(1, cat.get("id", -1).asInt());
+	Gtk::TreeStore::iterator row = m_catmodel->append();
+	row->set_value(0, cat.get("name", "Unnamed Category").asString());
+	row->set_value(1, cat.get("id", -1).asInt());
+	
+	//Loop over children
+	Json::Value children = cat.get("children", Json::Value::null);
+	if(children.isNull())
+		return;
+	for(Json::Value::iterator it = children.begin(); it != children.end(); it++)
+		ImportCategory(*it, row);
 }
 
+void MainWindow::ImportCategory(const Json::Value& cat, Gtk::TreeStore::iterator parent)
+{
+	//Add the new category to the end of the list
+	Gtk::TreeStore::iterator row = m_catmodel->append(parent->children());
+	row->set_value(0, cat.get("name", "Unnamed Category").asString());
+	row->set_value(1, cat.get("id", -1).asInt());
+	
+	//Loop over children
+	Json::Value children = cat.get("children", Json::Value::null);
+	if(children.isNull())
+		return;
+	for(Json::Value::iterator it = children.begin(); it != children.end(); it++)
+		ImportCategory(*it, row);
+}
