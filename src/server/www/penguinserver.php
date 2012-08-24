@@ -78,7 +78,7 @@ function DumpCategory($row)
 {
 	$ret = array();
 	$ret['name'] = $row->name;
-	$ret['id'] = $row->deviceCategory_id;
+	$ret['id'] = intval($row->deviceCategory_id);
 	
 	global $g_dbconn;
 	$result = $g_dbconn->query('select * from deviceCategory where parent_id = \'' . $row->id . '\'');
