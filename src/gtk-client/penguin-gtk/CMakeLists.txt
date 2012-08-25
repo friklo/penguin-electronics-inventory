@@ -11,6 +11,7 @@ INCLUDE_DIRECTORIES(
 #C++ compilation
 ADD_EXECUTABLE(penguin-gtk
 	AddCategoryDialog.cpp
+	AddManufacturerDialog.cpp
 	MainWindow.cpp
 	
 	main.cpp

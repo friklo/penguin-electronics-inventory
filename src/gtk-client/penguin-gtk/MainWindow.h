@@ -89,6 +89,9 @@ protected:
 			Gtk::TreeView m_catbrowser;
 				Glib::RefPtr<Gtk::TreeStore> m_catmodel;
 				CatBrowserColumns m_catcols;
+				Gtk::Menu m_catbrowser_popup;
+					Gtk::MenuItem m_catbrowser_popup_addcat;
+					Gtk::MenuItem m_catbrowser_popup_delcat;
 		Gtk::Notebook m_itemtabs;
 			Gtk::TreeView m_itemlist;
 			//TODO: List of item properties tabs
@@ -103,9 +106,8 @@ protected:
 			Gtk::TreeView m_manufacturerList;
 				Glib::RefPtr<Gtk::TreeStore> m_manufacturermodel;
 				ManufacturerListColumns m_manufacturercols;
-	Gtk::Menu m_catbrowser_popup;
-		Gtk::MenuItem m_catbrowser_popup_addcat;
-		Gtk::MenuItem m_catbrowser_popup_delcat;
+				Gtk::Menu m_manufacturerList_popup;
+					Gtk::MenuItem m_manufacturerList_popup_add;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//Client-server communication
@@ -124,11 +126,14 @@ protected:
 	//Message handlers
 	
 	bool OnClickCatBrowser(GdkEventButton* ev);
+	bool OnClickManufacturerList(GdkEventButton* ev);
 	
 	void OnAddCategory();
 	void OnDeleteCategory();
 	void OnCategoryEditStarted(Gtk::CellEditable* cell, const Glib::ustring& path);
 	void OnCategoryEditDone();
+	
+	void OnAddManufacturer();
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//Initialization

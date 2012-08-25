@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #include "AddCategoryDialog.h"
+#include "AddManufacturerDialog.h"
 
 using namespace std;
 
@@ -66,6 +67,7 @@ void MainWindow::CreateWidgets()
 	m_packagemodel = Gtk::TreeStore::create(m_packagecols);
 	m_manufacturermodel = Gtk::TreeStore::create(m_manufacturercols);
 	
+	//Main window widgets
 	add(m_rootsplitter);
 		m_rootsplitter.add1(m_catscroller);
 			m_catscroller.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
@@ -100,6 +102,7 @@ void MainWindow::CreateWidgets()
 			m_itemtabs.set_scrollable();
 		m_rootsplitter.set_position(300);
 	
+	//Category browser context menu
 	m_catbrowser_popup.add(m_catbrowser_popup_addcat);
 		m_catbrowser_popup_addcat.set_label("Add Category");
 		m_catbrowser_popup_addcat.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::OnAddCategory), true);
@@ -108,7 +111,15 @@ void MainWindow::CreateWidgets()
 		m_catbrowser_popup_delcat.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::OnDeleteCategory), true);
 	m_catbrowser_popup.show_all();
 	
+	//Manufacturer list context menu
+	m_manufacturerList_popup.add(m_manufacturerList_popup_add);
+		m_manufacturerList_popup_add.set_label("Add Manufacturer");
+		m_manufacturerList_popup_add.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::OnAddManufacturer), true);
+	m_manufacturerList_popup.show_all();
+	
+	//Control event handlers
 	m_catbrowser.signal_button_press_event().connect(sigc::mem_fun(*this, &MainWindow::OnClickCatBrowser), false);
+	m_manufacturerList.signal_button_press_event().connect(sigc::mem_fun(*this, &MainWindow::OnClickManufacturerList), false);
 	m_catbrowser.get_column_cell_renderer(0)->signal_editing_started().connect(sigc::mem_fun(*this, &MainWindow::OnCategoryEditStarted));
 }
 
@@ -423,4 +434,90 @@ void MainWindow::ImportCategory(const Json::Value& cat, Gtk::TreeStore::iterator
 		return;
 	for(Json::Value::iterator it = children.begin(); it != children.end(); it++)
 		ImportCategory(*it, row);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Manufacturer list
+bool MainWindow::OnClickManufacturerList(GdkEventButton* event)
+{
+	if(event->type == GDK_BUTTON_PRESS)
+	{
+		Gtk::TreeModel::Path path;
+		if(!m_manufacturerList.get_path_at_pos(event->x, event->y, path))		//TODO: bin window check
+			m_manufacturerList.get_selection()->unselect_all();
+		
+		//Popup menu
+		if(event->button == 3)
+		{
+			//Show all menu items
+			m_manufacturerList_popup.show_all();
+			
+			//Don't show menu items that don't make sense in this context
+			/*
+			Glib::RefPtr<Gtk::TreeSelection> sel = m_manufacturerList.get_selection();	
+			if(sel->count_selected_rows() == 0)
+				m_manufacturerList_popup_delcat.hide();
+			*/
+			
+			m_manufacturerList_popup.popup(event->button, event->time);
+		}
+	}
+	
+	//call the existing handler
+	return false;
+}
+
+void MainWindow::OnAddManufacturer()
+{
+	AddManufacturerDialog dlg;
+	if(dlg.run() != Gtk::RESPONSE_OK)
+		return;
+		
+	//TODO: do stuff
+	
+	/*
+	Glib::RefPtr<Gtk::TreeSelection> sel = m_catbrowser.get_selection();
+	
+	//Get ID of parent
+	int parent_id = -1;
+	if(sel->count_selected_rows() != 0)
+		sel->get_selected()->get_value(1, parent_id);
+	
+	//Ask the server to add the category	
+	std::map<string, string> args;
+	args["catname"] = dlg.m_catname.get_text();
+	char sparent[16];
+	snprintf(sparent, 15, "%d", parent_id);
+	args["parent"] = sparent;
+	string server_result = PostRequest("add_category", args);
+	
+	//Parse the result
+	Json::Reader reader;
+	Json::Value root;
+	if(!reader.parse(server_result, root, false))
+	{
+		printf("Couldn't parse JSON data\n");
+		return;
+	}
+	
+	//Check status
+	if(root.get("status", "fail").asString() != "ok")
+	{
+		Gtk::MessageDialog dlg(	string("Server-side error: ") + root.get("error_code", "Unspecified error").asString(),
+							false,
+							Gtk::MESSAGE_ERROR,
+							Gtk::BUTTONS_OK,
+							true);
+		dlg.run();
+		return;
+	}
+	
+	//All OK, get category ID
+	int catid = root.get("catid", 1).asInt();
+	
+	//Add the new category to the end of the list
+	Gtk::TreeStore::iterator it = m_catmodel->append();
+	it->set_value(0, dlg.m_catname.get_text());
+	it->set_value(1, catid);
+	*/
 }
