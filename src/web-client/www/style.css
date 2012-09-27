@@ -1,0 +1,44 @@
+div#categoryList
+{
+	/*position:absolute;*/
+	width:20%;
+	height:100%;
+	background:#E0F0FF;
+	color:#404040;
+	/*border-right:1px solid #404040;*/
+	overflow:auto;
+}
+
+.collapsibleList li
+{
+	margin-bottom:5px;
+	/*color:#404040;*/
+	list-style-image:url('images/button.png');
+	cursor:pointer;
+}
+
+/*.collapsibleList li:hover
+{
+	background:#6080FF;
+}*/
+
+li.collapsibleListOpen
+{
+	list-style-image:url('images/button-open.png');
+}
+
+li.collapsibleListOpen ul
+{
+	margin-top:5px;
+	margin-bottom:10px;
+}
+
+/*li.collapsibleListOpen:hover
+{
+	background:#A0C0FF;
+}*/
+
+li.collapsibleListClosed
+{
+	list-style-image:url('images/button-closed.png');
+}

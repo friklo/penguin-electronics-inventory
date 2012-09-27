@@ -1,0 +1,4 @@
+configVars =
+{
+	"serverAddress": "http://inventory-dev.drawersteak.com/penguinserver.php"
+}
