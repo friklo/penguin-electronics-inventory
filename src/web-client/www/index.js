@@ -44,6 +44,18 @@ $(document).ready(
 	}
 );
 
+function serverError(data)
+{
+	console.log("Server Error\nError code: '" + data.error_code + "'");
+	alert("Server Error\nError code: '" + data.error_code + "'");
+}
+
+function clientError(message)
+{
+	console.log("Error\n" + message);
+	alert("Error\n" + message);
+}
+
 function resizeContainer()
 {
 	$("#container").height($(window).height() - 50);
@@ -58,40 +70,162 @@ function listCategories()
 
 function displayCategoryList(data)
 {
-	var output = "<div id='addCategoryButton' class='button'>" + strings.addCategoryButtonText + "</div><ul class='collapsibleList'>";
-	
-	// Alphabetize the list
-	data.cats.sort(sortByObjectName);
-	
-	//console.log(data.cats);
-	
-	for(i = 0; i < data.cats.length; i++)
+	if(data.status == "ok")
 	{
-		output += createRecursiveList(data.cats[i]);
-	}
-	
-	output += "</ul>";
-	
-	CollapsibleLists.applyTo($("#categoryList").html(output)[0]);
-	
-	// Bind click event
-	$("span.categoryLabel").unbind("click").click(
-		function(event)
+		var output =
+			"<div id='addCategoryButton' class='button'>" + strings.addCategoryButtonText + "</div>" +
+			"<ul class='collapsibleList'>";
+		
+		// Alphabetize the list
+		data.cats.sort(sortByObjectName);
+		
+		for(i = 0; i < data.cats.length; i++)
 		{
-			var id = $(event.target).parent().attr("id").substring(catIDPrefix.length);
-			
-			$("#tabContainer").html(displayCategory(getCategoryByID(id, data.cats)));
+			output += createRecursiveList(data.cats[i]);
 		}
-	);
-	
-	$("#addCategoryButton").click(addCategoryClickHandler);
+		
+		output += "</ul>";
+		
+		CollapsibleLists.applyTo($("#categoryList").html(output)[0]);
+		
+		// Bind click event
+		$("span.categoryLabel").unbind("click").click(
+			function(event)
+			{
+				var id = $(event.target).parent().attr("id").substring(catIDPrefix.length);
+				
+				$("#tabContainer").html(displayCategory(getCategoryByID(id, data.cats)));
+			}
+		);
+		
+		$("#addCategoryButton").toggle(
+			function(event)
+			{
+				var buttonPosition = $(event.target).offset();
+				var buttonHeight = $(event.target).outerHeight();
+				
+				var windowLeft = buttonPosition.left;
+				var windowTop = buttonPosition.top + buttonHeight;
+				
+				var windowHeight = $("#addCategoryWindow").outerHeight();
+				
+				if(windowTop + windowHeight > $(window).height())
+				{
+					windowTop = buttonPosition.top - windowHeight;
+				}
+				
+				$(event.target).html(strings.cancelText);
+				
+				$("#addCategoryWindow_name").attr("value", "");
+				
+				$("#addCategoryWindow_parent").html("<option>" + strings.loadingText + "</option>");
+				
+				$("#addCategoryWindow_submit").html(strings.addCategorySubmitText).addClass("disabled");
+				
+				$.get(configVars.serverAddress, {"action": "list_categories"}, fillCategoriesDropDown, "json");
+				
+				$("#addCategoryWindow").css(
+					{
+						"left": windowLeft + "px",
+						"top": windowTop + "px"
+					}
+				).show();
+			},
+			
+			function(event)
+			{
+				$(event.target).html(strings.addCategoryButtonText);
+				
+				$("#addCategoryWindow").hide();
+			}
+		);
+		
+		$("ul.collapsibleList").find("li").mouseover(
+			function(event)
+			{
+				$(this).children("span.modifyCategoryButton").show();
+				
+				return false;
+			}
+		)
+		.mouseout(	
+			function(event)
+			{
+				$(this).children("span.modifyCategoryButton").hide();
+			}
+		);
+		
+		$("span.modifyCategoryButton").toggle(
+			function(event)
+			{
+				$(event.target).html(strings.cancelText);
+				
+				var windowDiv = $(event.target).siblings("div.modifyCategoryWindow").eq(0);
+				
+				var buttonPosition = $(event.target).offset();
+				var buttonHeight = $(event.target).outerHeight();
+				
+				var windowLeft = buttonPosition.left;
+				var windowTop = buttonPosition.top + buttonHeight;
+				
+				var windowHeight = windowDiv.outerHeight();
+				
+				// Make sure it's not sticking below the bottom of the viewport
+				if(windowTop + windowHeight > $(window).height())
+				{
+					windowTop = buttonPosition.top - windowHeight;
+				}
+				
+				// Bind button click events
+				windowDiv.children("span.renameCategoryButton").unbind("click").click(renameCategoryClickHandler);
+				windowDiv.children("span.deleteCategoryButton").unbind("click").click(deleteCategoryClickHandler);
+				
+				windowDiv.css({"left": windowLeft + "px", "top": windowTop + "px"})
+					.show()
+					.unbind("click")
+					.click(
+						function(event)
+						{
+							return false;
+						}
+					);
+				
+				return false;
+			},
+			
+			function(event)
+			{
+				$(event.target).html(strings.modifyCategoryButtonText);
+				
+				var windowDiv = $(event.target).siblings("div.modifyCategoryWindow").eq(0);
+				
+				windowDiv.hide();
+				
+				windowDiv.children("span.renameCategoryButton").unbind("click");
+				windowDiv.children("span.deleteCategoryButton").unbind("click");
+				
+				return false;
+			}
+		);
+	}
+	else
+	{
+		serverError(data);
+	}
 }
 
 function createRecursiveList(category)
 {
 	var output = "<li id='" + catIDPrefix + category.id + "'>";
 	
-	output += "<span class='categoryLabel'>" + category.name + "</span>";
+	output +=
+		"<span class='categoryLabel'>" + category.name + "</span>" +
+		"<span class='modifyCategoryButton button'>" + strings.modifyCategoryButtonText + "</span>" +
+		"<div class='modifyCategoryWindow'>" +
+			"<span class='renameCategoryButton button' id='renameCategoryButton_" + category.id + "'>" + strings.renameCategoryButtonText + "</span>" +
+			"<br />" +
+			"<span class='deleteCategoryButton button' id='deleteCategoryButton_" + category.id + "'>" + strings.deleteCategoryButtonText + "</span>" +
+		"</div>";
 	
 	category.children.sort(sortByObjectName);
 	
@@ -148,82 +282,59 @@ function displayCategory(category)
 	}
 }
 
-function addCategoryClickHandler(event)
+function renameCategoryClickHandler(event)
 {
-	var buttonPosition = $(event.target).offset();
-	var buttonHeight = $(event.target).outerHeight();
 	
-	var windowLeft = buttonPosition.left;
-	var windowTop = buttonPosition.top + buttonHeight;
+}
+
+function deleteCategoryClickHandler(event)
+{
+	var catID = $(event.target).attr("id");
+	catID = catID.substring(catID.indexOf("_") + 1);
 	
-	var windowHeight = $("#addCategoryWindow").outerHeight();
-	
-	if(windowTop + windowHeight > $(window).height())
-	{
-		windowTop = buttonPosition.top - windowHeight;
-	}
-	
-	$(event.target).html(strings.cancelText);
-	
-	$("#addCategoryWindow_name").attr("value", "");
-	
-	$("#addCategoryWindow_parent").html("<option>" + strings.loadingText + "</option>");
-	
-	$("#addCategoryWindow_submit").html(strings.addCategorySubmitText).addClass("disabled");
-	
-	$.get(configVars.serverAddress, {"action": "list_categories"}, fillCategoriesDropDown, "json");
-	
-	$("#addCategoryWindow").css(
-		{
-			"left": windowLeft + "px",
-			"top": windowTop + "px"
-		}
-	).show();
-	
-	
-	$(event.target).unbind("click").click(
-		function()
-		{
-			$(event.target).html(strings.addCategoryButtonText);
-			
-			$("#addCategoryWindow").hide();
-			
-			$(event.target).unbind("click").click(addCategoryClickHandler);
-		}
-	);
+	deleteCategory(catID);
 }
 
 function fillCategoriesDropDown(data)
 {
-	var output = "<option value='-1'>None</option>";
-	
-	for(var i = 0; i < data.cats.length; i++)
+	if(data.status == "ok")
 	{
-		output += createRecursiveDropDownOptions(data.cats[i], 0);
-	}
-	
-	$("#addCategoryWindow_parent").html(output);
-	
-	$("#addCategoryWindow_submit").removeClass("disabled").unbind("click").click(
-		function(event)
+		var output = "<option value='-1'>None</option>";
+		
+		data.cats.sort(sortByObjectName);
+		
+		for(var i = 0; i < data.cats.length; i++)
 		{
-			var name = $("#addCategoryWindow_name").attr("value");
-			var parentID = $("#addCategoryWindow_parent").attr("value");
-			
-			if(name != undefined && name.replace(/ /g, "") != "")
-			{
-				addCategory(name, parentID);
-				
-				$(event.target).unbind("click");
-				
-				$("#addCategoryButton").click();
-			}
-			else
-			{
-				alert("Invalid Name");
-			}
+			output += createRecursiveDropDownOptions(data.cats[i], 0);
 		}
-	);
+		
+		$("#addCategoryWindow_parent").html(output);
+		
+		$("#addCategoryWindow_submit").removeClass("disabled").unbind("click").click(
+			function(event)
+			{
+				var name = $("#addCategoryWindow_name").attr("value");
+				var parentID = $("#addCategoryWindow_parent").attr("value");
+				
+				if(name != undefined && name.replace(/ /g, "") != "")
+				{
+					addCategory(name, parentID);
+					
+					$(event.target).unbind("click");
+					
+					$("#addCategoryButton").click();
+				}
+				else
+				{
+					alert("Invalid Name");
+				}
+			}
+		);
+	}
+	else
+	{
+		serverError(data);
+	}
 }
 
 function createRecursiveDropDownOptions(category, level)
@@ -261,13 +372,57 @@ function addCategory(name, parentID)
 	}
 	else
 	{
-		console.log("'name' and/or 'parent' is undefined or invaid");
+		clientError("'name' and/or 'parent' is undefined or invalid");
 	}
 }
 
 function addCategorySuccess(data)
 {
 	console.log(data);		// {"status":"ok","catid":57}
+	
+	if(data.status == "ok")
+	{
+		
+	}
+	else
+	{
+		serverError(data);
+	}
+	
+	listCategories();	
+}
+
+function renameCategory(catID, name)
+{
+	
+}
+
+function deleteCategory(catID)
+{
+	if($.isNumeric(catID))
+	{
+		console.log("Deleting category: {catid: \"" + catID + "\"}");
+		
+		$.post(configVars.serverAddress + "?action=delete_category", {"catid": catID}, deleteCategorySuccess, "json");
+	}
+	else
+	{
+		clientError("'catID' is not a number: " + catID)
+	}
+}
+
+function deleteCategorySuccess(data)
+{
+	console.log(data);		// {"status":"ok"}
+	
+	if(data.status == "ok")
+	{
+		
+	}
+	else
+	{
+		serverError(data);
+	}
 	
 	listCategories();	
 }

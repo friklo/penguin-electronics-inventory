@@ -36,7 +36,7 @@ span#license
 
 .collapsibleList li
 {
-	margin-bottom:5px;
+	padding-bottom:5px;
 	/*color:#404040;*/
 	list-style-image:url('images/button.png');
 	cursor:pointer;
@@ -69,15 +69,15 @@ li.collapsibleListClosed
 	list-style-image:url('images/button-closed.png');
 }
 
-div#addCategoryButton
-{
-	padding:5px;
-}
-
 .button
 {
 	color:#2040C0;
 	cursor:pointer;
+}
+
+div.button
+{
+	padding:5px;
 }
 
 .button:hover
@@ -86,6 +86,23 @@ div#addCategoryButton
 }
 
 div#addCategoryWindow
+{
+	position:absolute;
+	display:none;
+	background:#FFFFFF;
+	color:#202020;
+	padding:5px;
+	border:1px solid #000000;
+}
+
+span.modifyCategoryButton
+{
+	float:right;
+	padding-right:5px;
+	display:none;
+}
+
+div.modifyCategoryWindow
 {
 	position:absolute;
 	display:none;
