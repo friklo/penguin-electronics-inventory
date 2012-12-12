@@ -152,12 +152,16 @@ create table packageType(
 	`pincount` int not null,
 	`packageClass_id` int not null,
 	`image_url` varchar(255),
-	lead_pitch_um int not null,
+	`datasheet_id` int,
+	`manufacturer_id` int not null,
+	`lead_pitch_um` int not null,
 	index (`packageType_id`),
+	foreign key(`datasheet_id`) references datasheet(`datasheet_id`) on delete set null,
+	foreign key(`manufacturer_id`) references manufacturer(`manufacturer_id`) on delete cascade,
 	foreign key(`packageClass_id`) references packageClass(`packageClass_id`) on delete restrict,
 	primary key(`packageType_id`)
 	) engine=InnoDB;
-insert into packageType values('1', 'PDIP8', 'PDIP-8, 0.3 inch width', '8', '1', 'http://media.digikey.com/Renders/~~Pkg.Case%20or%20Series/8-DIP.jpg', '2540');
+-- insert into packageType values('1', 'PDIP8', 'PDIP-8, 0.3 inch width', '8', '1', 'http://media.digikey.com/Renders/~~Pkg.Case%20or%20Series/8-DIP.jpg', '2540');
 
 create table physicalDevice(
 	`physicalDevice_id` int auto_increment not null,
