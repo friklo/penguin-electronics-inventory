@@ -94,7 +94,7 @@ function displayCategoryList(data)
 			{
 				var id = $(event.target).parent().attr("id").substring(catIDPrefix.length);
 				
-				$("#tabContainer").html(displayCategory(getCategoryByID(id, data.cats)));
+				$("#tabContainer").html(categoryToHTML(getCategoryByID(id, data.cats)));
 			}
 		);
 		
@@ -122,6 +122,8 @@ function displayCategoryList(data)
 				
 				$("#addCategoryWindow_submit").html(strings.addCategorySubmitText).addClass("disabled");
 				
+				$("#addCategoryWindow_name").unbind("keydown");
+				
 				$.get(configVars.serverAddress, {"action": "list_categories"}, fillCategoriesDropDown, "json");
 				
 				$("#addCategoryWindow").css(
@@ -130,6 +132,9 @@ function displayCategoryList(data)
 						"top": windowTop + "px"
 					}
 				).show();
+				
+				$("#addCategoryWindow_name").focus();
+				
 			},
 			
 			function(event)
@@ -151,14 +156,17 @@ function displayCategoryList(data)
 		.mouseout(	
 			function(event)
 			{
-				$(this).children("span.modifyCategoryButton").hide();
+				if(!$(this).children("span.modifyCategoryButton").hasClass("persistentLabel"))
+				{
+					$(this).children("span.modifyCategoryButton").hide();
+				}
 			}
 		);
 		
 		$("span.modifyCategoryButton").toggle(
 			function(event)
 			{
-				$(event.target).html(strings.cancelText);
+				$(event.target).html(strings.cancelText).addClass("persistentLabel");
 				
 				var windowDiv = $(event.target).siblings("div.modifyCategoryWindow").eq(0);
 				
@@ -177,7 +185,43 @@ function displayCategoryList(data)
 				}
 				
 				// Bind button click events
-				windowDiv.children("span.renameCategoryButton").unbind("click").click(renameCategoryClickHandler);
+				windowDiv.children("span.renameCategoryButton").toggle(
+					function(event)
+					{
+						var catID = $(event.target).attr("id");
+						catID = catID.substring(catID.lastIndexOf("_") + 1);
+						
+						$(event.target).hide();
+						$(event.target).siblings("span.deleteCategoryButton").hide();
+						$(event.target).siblings("br").hide();
+						$(event.target).siblings("div.renameCategoryWindow").show();
+						
+						$(event.target).siblings("div.renameCategoryWindow").find("input").focus();
+						
+						$("#renameCategoryWindow_submit_" + catID).unbind("click").click(renameCategoryClickHandler);
+						
+						$(event.target).siblings("div.renameCategoryWindow").unbind("keydown").keydown(
+							function(event)
+							{
+								if(event.which == 13)	// Enter key
+								{
+									$("#renameCategoryWindow_submit_" + catID).click();
+								}
+							}
+						);
+					},
+					
+					function(event)
+					{
+						$(event.target).siblings("div.renameCategoryWindow").hide();
+						$(event.target).siblings("br").show();
+						$(event.target).siblings("span.deleteCategoryButton").show();
+						$(event.target).show();
+						
+						$(event.target).siblings("div.renameCategoryWindow").unbind("keydown");
+					}
+				);
+				
 				windowDiv.children("span.deleteCategoryButton").unbind("click").click(deleteCategoryClickHandler);
 				
 				windowDiv.css({"left": windowLeft + "px", "top": windowTop + "px"})
@@ -189,15 +233,29 @@ function displayCategoryList(data)
 							return false;
 						}
 					);
+					
+					// Todo: For some reason normal native focusing upon clicking the text input
+					// does not occur. This is a manual workaround
+					windowDiv.find("input").unbind("click").click(
+						function(event)
+						{
+							$(event.target).focus();
+						}
+					);
 				
 				return false;
 			},
 			
 			function(event)
 			{
-				$(event.target).html(strings.modifyCategoryButtonText);
+				$(event.target).html(strings.modifyCategoryButtonText).removeClass("persistentLabel");
 				
 				var windowDiv = $(event.target).siblings("div.modifyCategoryWindow").eq(0);
+				
+				if(windowDiv.children("span.renameCategoryButton").is(":hidden"))
+				{
+					windowDiv.children("span.renameCategoryButton").click();
+				}
 				
 				windowDiv.hide();
 				
@@ -220,11 +278,25 @@ function createRecursiveList(category)
 	
 	output +=
 		"<span class='categoryLabel'>" + category.name + "</span>" +
-		"<span class='modifyCategoryButton button'>" + strings.modifyCategoryButtonText + "</span>" +
+		"<span class='modifyCategoryButton button'>" +
+			strings.modifyCategoryButtonText +
+		"</span>" +
 		"<div class='modifyCategoryWindow'>" +
-			"<span class='renameCategoryButton button' id='renameCategoryButton_" + category.id + "'>" + strings.renameCategoryButtonText + "</span>" +
+			"<span class='renameCategoryButton button' id='renameCategoryButton_" + category.id + "'>" +
+				strings.renameCategoryButtonText +
+			"</span>" +
+			"<div class='renameCategoryWindow'>" +
+				"<span class='label'>New Name:</span>" +
+				"<input type='text' id='renameCategory_name_" + category.id + "' />" +
+				"<br />" +
+				"<span id='renameCategoryWindow_submit_" + category.id + "' class='button'>" +
+					strings.renameCategorySubmitText +
+				"</span>" +
+			"</div>" +
 			"<br />" +
-			"<span class='deleteCategoryButton button' id='deleteCategoryButton_" + category.id + "'>" + strings.deleteCategoryButtonText + "</span>" +
+			"<span class='deleteCategoryButton button' id='deleteCategoryButton_" +
+				category.id + "'>" + strings.deleteCategoryButtonText +
+			"</span>" +
 		"</div>";
 	
 	category.children.sort(sortByObjectName);
@@ -267,7 +339,7 @@ function getCategoryByID(id, categories)
 	return null;
 }
 
-function displayCategory(category)
+function categoryToHTML(category)
 {
 	console.log(category);
 	
@@ -284,15 +356,34 @@ function displayCategory(category)
 
 function renameCategoryClickHandler(event)
 {
+	var catID = $(event.target).attr("id");
+	catID = catID.substring(catID.lastIndexOf("_") + 1);
 	
+	var name = $("#renameCategory_name_" + catID).attr("value");
+	
+	if(name.replace(/ /g, "") != "")
+	{	
+		renameCategory(catID, name);
+	}
+	else
+	{
+		alert("Invalid Name");
+	}
 }
 
 function deleteCategoryClickHandler(event)
 {
 	var catID = $(event.target).attr("id");
-	catID = catID.substring(catID.indexOf("_") + 1);
+	catID = catID.substring(catID.lastIndexOf("_") + 1);
 	
-	deleteCategory(catID);
+	if(confirm("Are you sure you want to delete this category?"))
+	{
+		deleteCategory(catID);
+	}
+	else
+	{
+		// Don't delete it
+	}
 }
 
 function fillCategoriesDropDown(data)
@@ -330,6 +421,16 @@ function fillCategoriesDropDown(data)
 				}
 			}
 		);
+		
+		$("#addCategoryWindow_name").unbind("keydown").keydown(
+			function(event)
+			{
+				if(event.which == 13)		// Enter key
+				{
+					$("#addCategoryWindow_submit").click();
+				}
+			}
+		);
 	}
 	else
 	{
@@ -364,7 +465,7 @@ function createRecursiveDropDownOptions(category, level)
 function addCategory(name, parentID)
 {
 	// Don't do it if there are invalid values
-	if(name != undefined && name.replace(/ /g, "") != "" && parent != undefined)
+	if(name != undefined && name.replace(/ /g, "") != "" && $.isNumeric(parentID))
 	{
 		console.log("Adding category: {name: \"" + name + "\", parentID: \"" + parentID + "\"}");
 		
@@ -394,7 +495,32 @@ function addCategorySuccess(data)
 
 function renameCategory(catID, name)
 {
+	if($.isNumeric(catID) && name != undefined && name.replace(/ /g, "") != "")
+	{
+		console.log("Adding category: {catID: \"" + catID + "\", name: \"" + name + "\"}");
+		
+		$.post(configVars.serverAddress + "?action=rename_category", {"catid": catID, "name": name}, renameCategorySuccess, "json");
+	}
+	else
+	{
+		clientError("'catID' and/or 'name' is undefined or invalid.\ncatID: '" + catID + "', name: '" + name + "'");
+	}
+}
+
+function renameCategorySuccess(data)
+{
+	console.log(data);		// {"status":"ok"}
 	
+	if(data.status == "ok")
+	{
+		
+	}
+	else
+	{
+		serverError(data);
+	}
+	
+	listCategories();	
 }
 
 function deleteCategory(catID)
@@ -407,7 +533,7 @@ function deleteCategory(catID)
 	}
 	else
 	{
-		clientError("'catID' is not a number: " + catID)
+		clientError("'catID' is not a number: '" + catID + "'")
 	}
 }
 

@@ -10,5 +10,5 @@ var strings =
 	"renameCategoryButtonText": "Rename",
 	"deleteCategoryButtonText": "Delete",
 	
-	"renameCategorySubmitText": "Rename"
+	"renameCategorySubmitText": "Submit"
 };

@@ -111,3 +111,8 @@ div.modifyCategoryWindow
 	padding:5px;
 	border:1px solid #000000;
 }
+
+div.renameCategoryWindow
+{
+	display:none;
+}
